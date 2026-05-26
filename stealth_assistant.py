@@ -175,14 +175,25 @@ class StealthAssistant:
 
             creationflags = 0x08000000 if sys.platform == "win32" else 0
 
+            server_dir = os.path.dirname(self.server_path) if self.server_path else None
+
             try:
                 self.server_process = subprocess.Popen(
                     cmd,
                     creationflags=creationflags,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
+                    stderr=subprocess.PIPE,  # Получаем ошибки, если они возникнут
+                    cwd=server_dir  # Указываем рабочую директорию сервера
                 )
-                print("Сервер запущен!")
+
+                try:
+                    outs, errs = self.server_process.communicate(timeout=1.0)
+                    if errs:
+                        print(f"[Ошибка сервера]: {errs.decode('utf-8', errors='ignore')}")
+                except subprocess.TimeoutExpired:
+                    # Если процесс не завершился за секунду, значит он работает штатно
+                    print("Сервер запущен!")
+
             except Exception as e:
                 print(f"[Ошибка автозапуска сервера]: {e}")
 
